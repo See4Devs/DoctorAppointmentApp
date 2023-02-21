@@ -1,0 +1,14 @@
+﻿version: '3.4'
+
+services:
+  application.api:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    ports:
+      - "6001:80"
+    restart: on-failure
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"

@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Dao\" />
+    <None Remove="Dto\" />
+    <None Remove="Interfaces\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Dao\" />
+    <Folder Include="Dto\" />
+    <Folder Include="Interfaces\" />
+  </ItemGroup>
+</Project>

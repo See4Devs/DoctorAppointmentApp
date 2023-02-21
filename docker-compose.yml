@@ -1,0 +1,9 @@
+﻿version: '3.4'
+
+services:
+  application.api:
+    image: doctorly/application:${TAG:-latest}
+    build:
+      context: .
+      dockerfile: Application.API/Dockerfile
+
