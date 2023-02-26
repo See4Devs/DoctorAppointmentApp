@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace Application.Domain.Dao
 {
@@ -31,12 +32,18 @@ namespace Application.Domain.Dao
 		public int RemindBefore { get; set; }
 
 		public int DoctorId { get; set; }
+
+		[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
 		public Doctor Doctor { get; set; }
 
 		public int EventId { get; set; }
+
+		[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
 		public Event Event { get; set; }
 
 		public int PatientId { get; set; }
+
+		[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
 		public Patient Patient { get; set; }
 	}
 }

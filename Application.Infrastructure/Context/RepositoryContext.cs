@@ -1,5 +1,4 @@
-﻿using System;
-using Application.Domain.Dao;
+﻿using Application.Domain.Dao;
 using Microsoft.EntityFrameworkCore;
 
 namespace Application.Infrastructure.Context

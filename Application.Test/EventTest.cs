@@ -1,78 +1,114 @@
-﻿using Application.API.Controllers;
+﻿using System.Threading.Tasks;
+using Application.API.Controllers;
 using Application.Domain.Dao;
 using Application.Domain.Dto;
 using Application.Domain.Interfaces;
+using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
-using Moq;
+using NSubstitute;
 using Xunit;
 
 public class EventTest
 {
+    private readonly IEventRepository _eventRepository;
+    private readonly IEventService _eventService;
+    private readonly IMapper _mapper;
     private readonly EventController _controller;
-    private readonly Mock<IDataRepository<Event>> _mockRepository;
-    private readonly Mock<IEventService> _mockService;
 
     public EventTest()
     {
-        _mockRepository = new Mock<IDataRepository<Event>>();
-        _mockService = new Mock<IEventService>();
-        _controller = new EventController(_mockRepository.Object, _mockService.Object);
+        _eventRepository = Substitute.For<IEventRepository>();
+        _eventService = Substitute.For<IEventService>();
+        _mapper = Substitute.For<IMapper>();
+        _controller = new EventController(_eventRepository, _eventService, _mapper);
     }
 
-    //Test Get method with valid filter
     [Fact]
-    public void Get_ReturnsOkResult_WithValidFilter()
+    public async Task Get_ReturnsOkObjectResult_WhenCalled()
     {
-        //Arrange
-        var filter = new FilterModel();
-        var mockEventService = new Mock<IEventService>();
-        mockEventService.Setup(repo => repo.GetEvents(filter)).Returns(new PaginationResponseModel<Event>());
-        var controller = new EventController(Mock.Of<IDataRepository<Event>>(), mockEventService.Object);
+        // Arrange
+        var filter = new FilterDto()
+        {
+            searchText = "str",
+            limit = 1,
+            page = 1
+        };
+        var paginationResponseDto = new PaginationResponseDto<EventDto>();
 
-        //Act
-        var result = controller.Get(filter);
+        _eventService.GetEventsAsync(Arg.Any<FilterDto>())
+            .Returns(Task.FromResult(paginationResponseDto));
 
-        //Assert
-        var okResult = Assert.IsType<OkObjectResult>(result);
-        var model = Assert.IsAssignableFrom<PaginationResponseModel<Event>>(okResult.Value);
-        Assert.NotNull(model);
+        // Act
+        var result = await _controller.Get(filter);
+
+        // Assert
+        Assert.IsType<OkObjectResult>(result.Result);
     }
 
-    //Test Get method with invalid filter
     [Fact]
-    public void Get_ReturnsBadRequest_WithInvalidFilter()
+    public async Task Get_ReturnsOkResult_WhenEventIsFound()
     {
-        //Arrange
-        var filter = new FilterModel() { page = -1 };
-        var mockEventService = new Mock<IEventService>();
-        var controller = new EventController(Mock.Of<IDataRepository<Event>>(), mockEventService.Object);
-        controller.ModelState.AddModelError("page", "page must be greater than 0");
-
-        //Act
-        var result = controller.Get(filter);
-
-        //Assert
-        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
-        var error = Assert.IsType<SerializableError>(badRequestResult.Value);
-        Assert.True(error.ContainsKey("page"));
-    }
-
-    //Test Get method with valid eventId
-    [Fact]
-    public void Get_ReturnsOkResult_WithValidEventId()
-    {
-        //Arrange
+        // Arrange
         var eventId = 1;
-        var mockEventRepository = new Mock<IDataRepository<Event>>();
-        mockEventRepository.Setup(repo => repo.Get(eventId)).Returns(new Event());
-        var controller = new EventController(mockEventRepository.Object, Mock.Of<IEventService>());
+        var eventObj = new Event();
+        var expectedResponse = new EventDto();
+        _eventRepository.GetAsync(eventId).Returns(eventObj);
+        _mapper.Map<EventDto>(eventObj).Returns(expectedResponse);
 
-        //Act
-        var result = controller.Get(eventId);
+        // Act
+        var result = await _controller.Get(eventId);
 
-        //Assert
+        // Assert
         var okResult = Assert.IsType<OkObjectResult>(result);
-        var model = Assert.IsAssignableFrom<Event>(okResult.Value);
-        Assert.NotNull(model);
+        var actualResponse = Assert.IsType<EventDto>(okResult.Value);
+        Assert.Equal(expectedResponse, actualResponse);
+    }
+
+    [Fact]
+    public async Task Post_ReturnsOkResult_WhenModelStateIsValid()
+    {
+        // Arrange
+        var eventBodyDto = new EventBodyDto();
+        var eventEntity = new Event();
+        var expectedResponse = "Event added successfully";
+        _mapper.Map<Event>(eventBodyDto).Returns(eventEntity);
+        _eventRepository.AddAsync(eventEntity).Returns(expectedResponse);
+
+        // Act
+        var result = await _controller.Post(eventBodyDto);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        var actualResponse = Assert.IsType<string>(okResult.Value);
+        Assert.Equal(expectedResponse, actualResponse);
+    }
+
+    [Fact]
+    public async Task Post_ReturnsBadRequest_WhenModelStateIsInvalid()
+    {
+        // Arrange
+        var eventBodyDto = new EventBodyDto();
+        _controller.ModelState.AddModelError("Name", "The Name field is required");
+
+        // Act
+        var result = await _controller.Post(eventBodyDto);
+
+        // Assert
+        Assert.IsType<BadRequestObjectResult>(result);
+    }
+
+    [Fact]
+    public async Task Put_ReturnsBadRequest_WhenModelStateIsInvalid()
+    {
+        // Arrange
+        var eventId = 1;
+        var eventBodyDto = new EventBodyDto();
+        _controller.ModelState.AddModelError("Name", "The Name field is required");
+
+        // Act
+        var result = await _controller.Put(eventId, eventBodyDto);
+
+        // Assert
+        Assert.IsType<BadRequestObjectResult>(result);
     }
 }

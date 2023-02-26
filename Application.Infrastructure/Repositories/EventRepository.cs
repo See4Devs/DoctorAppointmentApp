@@ -1,10 +1,11 @@
 ﻿using Application.Domain.Dao;
 using Application.Domain.Interfaces;
 using Application.Infrastructure.Context;
+using Microsoft.EntityFrameworkCore;
 
 namespace Application.Infrastructure.Repositories
 {
-    public class EventRepository : IDataRepository<Event>
+    public class EventRepository : IEventRepository
     {
 
         readonly RepositoryContext _repositoryContext;
@@ -15,36 +16,40 @@ namespace Application.Infrastructure.Repositories
         }
 
 
-        public void Add(Event entity)
+        public async Task<string> AddAsync(Event entity)
         {
-            _repositoryContext.Event.Add(entity);
-            _repositoryContext.SaveChanges();
+            await _repositoryContext.Event.AddAsync(entity);
+            await _repositoryContext.SaveChangesAsync();
+            return "Successfully Created";
         }
 
-        public void Delete(Event entity)
+        public async Task<string> DeleteAsync(Event entity)
         {
             _repositoryContext.Event.Remove(entity);
-            _repositoryContext.SaveChanges();
+            await _repositoryContext.SaveChangesAsync();
+            return "Successfully Deleted";
         }
 
-        public Event Get(int id)
+        public async Task<Event> GetAsync(int id)
         {
-            return _repositoryContext.Event
-                  .FirstOrDefault(e => e.EventId == id);
+            return await _repositoryContext.Event
+                  .FirstOrDefaultAsync(e => e.EventId == id);
         }
 
-        public IEnumerable<Event> GetAll()
+        public async Task<IEnumerable<Event>> GetAllAsync()
         {
-            return _repositoryContext.Event.ToList();
+            return await _repositoryContext.Event.ToListAsync();
         }
 
-        public void Update(Event dbEntity, Event entity)
+        public async Task<string> UpdateAsync(Event dbEntity, Event entity)
         {
             dbEntity.Name = entity.Name;
             dbEntity.Description = entity.Description;
             dbEntity.StartTime = entity.StartTime;
             dbEntity.EndTime = entity.EndTime;
-            _repositoryContext.SaveChanges();
+            await _repositoryContext.SaveChangesAsync();
+
+            return "Successfully Updated";
         }
     }
 }

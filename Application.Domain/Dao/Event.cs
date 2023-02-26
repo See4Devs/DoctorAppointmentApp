@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace Application.Domain.Dao
 {
@@ -20,7 +21,8 @@ namespace Application.Domain.Dao
 		public DateTime StartTime { get; set; }
 		public DateTime EndTime { get; set; }
 
-		public List<Appointment> Appointments { get; set; }
+		[JsonIgnore]
+		public ICollection<Appointment> Appointments { get; set; }
 	}
 }
 

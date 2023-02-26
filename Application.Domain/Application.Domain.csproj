@@ -10,10 +10,25 @@
     <None Remove="Dao\" />
     <None Remove="Dto\" />
     <None Remove="Interfaces\" />
+    <None Remove="Dto\Doctor\" />
+    <None Remove="Dto\Appointment\" />
+    <None Remove="Dto\Common\" />
+    <None Remove="Dto\Event\" />
+    <None Remove="Dto\Patient\" />
+    <None Remove="Dto\Filter\" />
+    <None Remove="Interface\Service\" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Dao\" />
     <Folder Include="Dto\" />
-    <Folder Include="Interfaces\" />
+    <Folder Include="Interface\" />
+    <Folder Include="Dto\Doctor\" />
+    <Folder Include="Dto\Appointment\" />
+    <Folder Include="Dto\Common\" />
+    <Folder Include="Dto\Event\" />
+    <Folder Include="Dto\Patient\" />
+    <Folder Include="Interface\Repository\" />
+    <Folder Include="Dto\Filter\" />
+    <Folder Include="Interface\Service\" />
   </ItemGroup>
 </Project>
