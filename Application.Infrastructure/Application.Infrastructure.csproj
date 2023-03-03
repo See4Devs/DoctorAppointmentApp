@@ -16,6 +16,8 @@
     <None Remove="Microsoft.EntityFrameworkCore.SqlServer" />
     <None Remove="Context\" />
     <None Remove="Repositories\" />
+    <None Remove="AutoMapper" />
+    <None Remove="AutoMapper.Extensions.Microsoft.DependencyInjection" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="6.0.14">
@@ -29,6 +31,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+    <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Application.Domain\Application.Domain.csproj" />

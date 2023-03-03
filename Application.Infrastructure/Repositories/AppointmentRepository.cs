@@ -1,10 +1,11 @@
 ﻿using Application.Domain.Dao;
 using Application.Domain.Interfaces;
 using Application.Infrastructure.Context;
+using Microsoft.EntityFrameworkCore;
 
 namespace Application.Infrastructure.Repositories
 {
-    public class AppointmentRepository : IDataRepository<Appointment>
+    public class AppointmentRepository : IAppointmentRepository
     {
 
         readonly RepositoryContext _repositoryContext;
@@ -15,82 +16,90 @@ namespace Application.Infrastructure.Repositories
         }
 
 
-        public void Add(Appointment entity)
+        public async Task<string> AddAsync(Appointment entity)
         {
-            _repositoryContext.Appointment.Add(entity);
-            _repositoryContext.SaveChanges();
+            await _repositoryContext.Appointment.AddAsync(entity);
+            await _repositoryContext.SaveChangesAsync();
+            return "Successfully Created";
         }
 
-        public void Delete(Appointment entity)
+        public async Task<string> DeleteAsync(Appointment entity)
         {
             _repositoryContext.Appointment.Remove(entity);
-            _repositoryContext.SaveChanges();
+            await _repositoryContext.SaveChangesAsync();
+            return "Successfully Deleted";
         }
 
-        public Appointment Get(int id)
+        public async Task<Appointment> GetAsync(int id)
         {
-            var result = _repositoryContext.Appointment
-                  .FirstOrDefault(e => e.AppointmentId == id);
-
-
-            //Not my best work here, had some issues, but it will do the job
-            var DoctorId = result?.DoctorId;
-            var EventId = result?.EventId;
-            var PatientId = result?.PatientId;
-
-            var Doctor = _repositoryContext.Doctor
-                  .FirstOrDefault(e => e.DoctorId == DoctorId);
-
-            var Event = _repositoryContext.Event
-                  .FirstOrDefault(e => e.EventId == EventId);
-
-            var Patient = _repositoryContext.Patient
-                  .FirstOrDefault(e => e.PatientId == PatientId);
-
-            if(result != null)
+            var result = await _repositoryContext.Appointment.Include(e => e.Event).Include(p => p.Patient).Include(d => d.Doctor).Select(a => new Appointment
             {
-                if(Patient != null)
+                AppointmentId = a.AppointmentId,
+                Name = a.Name,
+                Description = a.Description,
+                NotifyByEmail = a.NotifyByEmail,
+                NotifyBySMS = a.NotifyBySMS,
+                Attended = a.Attended,
+                RemindBefore = a.RemindBefore,
+                DoctorId = a.DoctorId,
+                PatientId = a.PatientId,
+                Event = new Event
                 {
-                    result.Patient = new Patient
-                    {
-                        Address = Patient.Address,
-                        Name = Patient.Name,
-                        Email = Patient.Email,
-                        DateOfBirth = Patient.DateOfBirth,
-                        PatientId = Patient.PatientId
-                    };
-                }
-                if (Doctor != null)
+                    EventId = a.EventId,
+                    StartTime = a.Event.StartTime,
+                    EndTime = a.Event.EndTime
+                },
+                Doctor = new Doctor
                 {
-                    result.Doctor = new Doctor
-                    {
-                        DoctorId = Doctor.DoctorId,
-                        Name = Doctor.Name,
-                        Specialty = Doctor.Specialty
-                    };
-                }
-                if (Event != null)
+                    DoctorId = a.Doctor.DoctorId,
+                    Name = a.Doctor.Name,
+                    Specialty = a.Doctor.Specialty
+                },
+                Patient = new Patient
                 {
-                    result.Event = new Event
-                    {
-                        EventId = Event.EventId,
-                        Name = Event.Name,
-                        Description = Event.Description,
-                        StartTime = Event.StartTime,
-                        EndTime = Event.EndTime
-                    };
+                    PatientId = a.Patient.PatientId,
+                    Name = a.Patient.Name
                 }
-            }
+            }).FirstOrDefaultAsync(e => e.AppointmentId == id);
+            return result;
+        }
+
+        public async Task<IEnumerable<Appointment>> GetAllAsync()
+        {
+            var result = await _repositoryContext.Appointment.Include(e => e.Event).Include(p => p.Patient).Include(d => d.Doctor).Select(a => new Appointment
+            {
+                AppointmentId = a.AppointmentId,
+                Name = a.Name,
+                Description = a.Description,
+                NotifyByEmail = a.NotifyByEmail,
+                NotifyBySMS = a.NotifyBySMS,
+                Attended = a.Attended,
+                RemindBefore = a.RemindBefore,
+                DoctorId = a.DoctorId,
+                PatientId = a.PatientId,
+                Event = new Event
+                {
+                    EventId = a.EventId,
+                    StartTime = a.Event.StartTime,
+                    EndTime = a.Event.EndTime
+                },
+                Doctor = new Doctor
+                {
+                    DoctorId = a.Doctor.DoctorId,
+                    Name = a.Doctor.Name,
+                    Specialty = a.Doctor.Specialty
+                },
+                Patient = new Patient
+                {
+                    PatientId = a.Patient.PatientId,
+                    Name = a.Patient.Name
+                }
+            }).ToListAsync();
 
             return result;
         }
 
-        public IEnumerable<Appointment> GetAll()
-        {
-            return _repositoryContext.Appointment.ToList();
-        }
-
-        public void Update(Appointment dbEntity, Appointment entity)
+        public async Task<string> UpdateAsync(Appointment dbEntity, Appointment entity)
         {
             dbEntity.Name = entity.Name;
             dbEntity.Attended = entity.Attended;
@@ -100,8 +109,9 @@ namespace Application.Infrastructure.Repositories
             dbEntity.PatientId = entity.PatientId;
             dbEntity.EventId = entity.EventId;
             dbEntity.DoctorId = entity.DoctorId;
+            await _repositoryContext.SaveChangesAsync();
 
-            _repositoryContext.SaveChanges();
+            return "Successfully Updated";
         }
     }
 }

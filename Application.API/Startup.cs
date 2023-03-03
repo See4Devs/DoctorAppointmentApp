@@ -1,5 +1,4 @@
 ﻿using Application.API.Services;
-using Application.Domain.Dao;
 using Application.Domain.Interfaces;
 using Application.Infrastructure.Context;
 using Application.Infrastructure.Repositories;
@@ -21,15 +20,13 @@ namespace Application.API
         {
             services.AddDbContext<RepositoryContext>(options =>
             {
-                //options.UseNpgsql(Configuration.GetConnectionString("Default"));
                 options.UseSqlite("Data Source=doctorly.db");
 
             });
-
-            services.AddScoped<IDataRepository<Patient>, PatientRepository>();
-            services.AddScoped<IDataRepository<Doctor>, DoctorRepository>();
-            services.AddScoped<IDataRepository<Event>, EventRepository>();
-            services.AddScoped<IDataRepository<Appointment>, AppointmentRepository>();
+            services.AddScoped<IEventRepository, EventRepository>();
+            services.AddScoped<IAppointmentRepository, AppointmentRepository>();
+            services.AddScoped<IPatientRepository, PatientRepository>();
+            services.AddScoped<IDoctorRepository, DoctorRepository>();
             services.AddScoped<IPatientService, PatientService>();
             services.AddScoped<IDoctorService, DoctorService>();
             services.AddScoped<IEventService, EventService>();
@@ -46,6 +43,8 @@ namespace Application.API
                       });
             });
 
+            // Auto Mapper
+            services.AddAutoMapper(typeof(Startup));
             services.AddControllers();
             services.AddEndpointsApiExplorer();
             services.AddSwaggerGen();

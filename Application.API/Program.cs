@@ -9,9 +9,9 @@
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
-                .ConfigureWebHostDefaults(webBuilder =>
+                .ConfigureWebHostDefaults(Builder =>
                 {
-                    webBuilder.UseStartup<Startup>();
+                    Builder.UseStartup<Startup>();
                 });
     }
 }

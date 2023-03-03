@@ -1,9 +1,8 @@
-﻿using System;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 
 namespace Application.Domain.Dto
 {
-	public class FilterModel
+	public class FilterDto
 	{
 		[DefaultValue("")]
 		public string searchText { get; set; }

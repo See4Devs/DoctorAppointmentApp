@@ -1,6 +1,7 @@
 ﻿using Application.Domain.Dao;
 using Application.Domain.Dto;
 using Application.Domain.Interfaces;
+using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Application.API.Controllers
@@ -9,22 +10,24 @@ namespace Application.API.Controllers
     [ApiController]
     public class AppointmentController : ControllerBase
     {
-        private readonly IDataRepository<Appointment> _appointmentRepository;
+        private readonly IAppointmentRepository _appointmentRepository;
         private IAppointmentService _appointmentService;
+        private IMapper _mapper;
 
-        public AppointmentController(IDataRepository<Appointment> appointmentRepository, IAppointmentService appointmentService)
+        public AppointmentController(IAppointmentRepository appointmentRepository, IAppointmentService appointmentService, IMapper mapper)
         {
             _appointmentRepository = appointmentRepository;
             _appointmentService = appointmentService;
+            _mapper = mapper;
         }
 
         // GET: api/appointment
         [HttpGet]
-        public ActionResult<PaginationResponseModel<Appointment>> Get([FromQuery] FilterModel filter)
+        public async Task<ActionResult<PaginationResponseDto<AppointmentDto>>> Get([FromQuery] FilterDto filter)
         {
             try
             {
-                var result = _appointmentService.GetAppointments(filter);
+                var result = await _appointmentService.GetAppointmentsAsync(filter);
                 return Ok(result);
             }
             catch (Exception e)
@@ -35,17 +38,17 @@ namespace Application.API.Controllers
 
         // GET api/appointment/5
         [HttpGet("{appointmentId}")]
-        public IActionResult Get(int appointmentId)
+        public async Task<IActionResult> Get(int appointmentId)
         {
             try
             {
-                Appointment appointment = _appointmentRepository.Get(appointmentId);
-
+                Appointment appointment = await _appointmentRepository.GetAsync(appointmentId);
                 if (appointment == null)
                 {
                     return NotFound();
                 }
-                return Ok(appointment);
+                var result = _mapper.Map<AppointmentDetailsDto>(appointment);
+                return Ok(result);
             }
             catch (Exception e)
             {
@@ -55,14 +58,15 @@ namespace Application.API.Controllers
 
         // POST api/appointment
         [HttpPost]
-        public IActionResult Post([FromBody] AppointmentModel appointment)
+        public async Task<IActionResult> Post([FromBody] AppointmentBodyDto appointment)
         {
             if (ModelState.IsValid)
             {
                 try
                 {
-                    _appointmentRepository.Add(appointment.TransformToDto());
-                    return Ok("Successfully created");
+                    Appointment appointmentEntity = _mapper.Map<Appointment>(appointment);
+                    string response = await _appointmentRepository.AddAsync(appointmentEntity);
+                    return Ok(response);
                 }
                 catch (Exception e)
                 {
@@ -78,19 +82,20 @@ namespace Application.API.Controllers
 
         // PUT api/appointment/5
         [HttpPut("{appointmentId}")]
-        public IActionResult Put(int appointmentId, [FromBody] AppointmentModel appointment)
+        public async Task<IActionResult> Put(int appointmentId, [FromBody] AppointmentBodyDto appointment)
         {
             if (ModelState.IsValid)
             {
-                Appointment appointmentToUpdate = _appointmentRepository.Get(appointmentId);
+                Appointment appointmentToUpdate = await _appointmentRepository.GetAsync(appointmentId);
 
                 if (appointmentToUpdate == null)
                 {
                     return BadRequest("Appointment doesnt exist");
 
                 }
-                _appointmentRepository.Update(appointmentToUpdate, appointment.TransformToDto());
-                return Ok("Successfully updated");
+                Appointment appointmentEntity = _mapper.Map<Appointment>(appointment);
+                string response = await _appointmentRepository.UpdateAsync(appointmentToUpdate, appointmentEntity);
+                return Ok(response);
             }
             else
             {
@@ -100,16 +105,16 @@ namespace Application.API.Controllers
 
         // DELETE api/appointment/5
         [HttpDelete("{appointmentId}")]
-        public IActionResult Delete(int appointmentId)
+        public async Task<IActionResult> Delete(int appointmentId)
         {
-            Appointment appointmentToDelete = _appointmentRepository.Get(appointmentId);
+            Appointment appointmentToDelete = await _appointmentRepository.GetAsync(appointmentId);
             if (appointmentToDelete == null)
             {
                 return BadRequest("Appointment doesnt exist");
 
             }
-            _appointmentRepository.Delete(appointmentToDelete);
-            return Ok("Successfully Deleted");
+            string response = await _appointmentRepository.DeleteAsync(appointmentToDelete);
+            return Ok(response);
         }
     }
 }

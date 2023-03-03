@@ -6,22 +6,39 @@ namespace Application.API.Services
 {
     public class AppointmentService : IAppointmentService
     {
-        private readonly IDataRepository<Appointment> _appointmentRepository;
+        private readonly IAppointmentRepository _appointmentRepository;
 
-        public AppointmentService(IDataRepository<Appointment> appointmentRepository)
+        public AppointmentService(IAppointmentRepository appointmentRepository)
         {
             _appointmentRepository = appointmentRepository;
         }
 
-        public PaginationResponseModel<Appointment> GetAppointments(FilterModel filter)
+        public async Task<PaginationResponseDto<AppointmentDto>> GetAppointmentsAsync(FilterDto filter)
         {
-            IEnumerable<Appointment> appointments = _appointmentRepository.GetAll();
+            IEnumerable<Appointment> appointments = await _appointmentRepository.GetAllAsync();
 
-            IEnumerable<Appointment> filteredAppointments = appointments.Where(p => p.Name.StartsWith(filter.searchText ?? String.Empty, StringComparison.InvariantCultureIgnoreCase))
+            IEnumerable<AppointmentDto> filteredAppointments = appointments.Where(p => p.Name.StartsWith(filter.searchText ?? String.Empty, StringComparison.InvariantCultureIgnoreCase))
                 .Skip((filter.page - 1) * filter.limit)
-                .Take(filter.limit);
+                .Take(filter.limit).Select(a => new AppointmentDto
+                {
+                    AppointmentId = a.AppointmentId,
+                    Name = a.Name,
+                    Description = a.Description,
+                    NotifyByEmail = a.NotifyByEmail,
+                    NotifyBySMS = a.NotifyBySMS,
+                    Attended = a.Attended,
+                    RemindBefore = a.RemindBefore,
+                    DoctorId = a.DoctorId,
+                    PatientId = a.PatientId,
+                    Event = new EventDto
+                    {
+                        EventId = a.EventId,
+                        StartTime = a.Event.StartTime,
+                        EndTime = a.Event.EndTime
+                    }
+                });
 
-            var result = new PaginationResponseModel<Appointment>();
+            var result = new PaginationResponseDto<AppointmentDto>();
 
             result.Items = filteredAppointments;
 

@@ -1,131 +1,65 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Threading.Tasks;
 using Application.API.Controllers;
 using Application.Domain.Dao;
 using Application.Domain.Dto;
 using Application.Domain.Interfaces;
+using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
-using Moq;
+using NSubstitute;
 using Xunit;
 
 namespace Application.API.Tests.Controllers
 {
     public class AppointmentTest
     {
-        private readonly AppointmentController _controller;
-        private readonly Mock<IDataRepository<Appointment>> _appointmentRepositoryMock;
-        private readonly Mock<IAppointmentService> _appointmentServiceMock;
+        private readonly IAppointmentRepository _appointmentRepository;
+        private readonly IAppointmentService _appointmentService;
+        private readonly IMapper _mapper;
 
         public AppointmentTest()
         {
-            _appointmentRepositoryMock = new Mock<IDataRepository<Appointment>>();
-            _appointmentServiceMock = new Mock<IAppointmentService>();
-            _controller = new AppointmentController(_appointmentRepositoryMock.Object, _appointmentServiceMock.Object);
+            _appointmentRepository = Substitute.For<IAppointmentRepository>();
+            _appointmentService = Substitute.For<IAppointmentService>();
+            _mapper = Substitute.For<IMapper>();
         }
 
         [Fact]
-        public void Get_ReturnsOkResult_WithListOfAppointments()
+        public async Task Get_ReturnsOkResult_WhenCalledWithValidId()
         {
             // Arrange
-            var appointments = new List<Appointment>
-            {
-                new Appointment
-                {
-                    AppointmentId = 1,
-                    PatientId = 1,
-                    EventId = 1,
-                    DoctorId = 1,
-                    Name = "Appointment 1",
-                    Attended = false,
-                    NotifyByEmail = false,
-                    NotifyBySMS = false,
-                    RemindBefore = 10
-                },
-                new Appointment
-                {
-                    AppointmentId = 2,
-                    PatientId = 2,
-                    EventId = 2,
-                    DoctorId = 2,
-                    Name = "Appointment 2",
-                    Attended = false,
-                    NotifyByEmail = false,
-                    NotifyBySMS = false,
-                    RemindBefore = 5
-                },
-            };
-            var filter = new FilterModel();
-
-            _appointmentServiceMock.Setup(x => x.GetAppointments(filter)).Returns(new PaginationResponseModel<Appointment>
-            {
-                Items = appointments
-            });
+            var controller = new AppointmentController(_appointmentRepository, _appointmentService, _mapper);
+            var appointmentId = 1;
+            var appointment = new Appointment();
+            var expected = new AppointmentDetailsDto();
+            _appointmentRepository.GetAsync(appointmentId).Returns(appointment);
+            _mapper.Map<AppointmentDetailsDto>(appointment).Returns(expected);
 
             // Act
-            var result = _controller.Get(filter);
+            var result = await controller.Get(appointmentId);
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
-            var model = Assert.IsAssignableFrom<PaginationResponseModel<Appointment>>(okResult.Value);
-            Assert.Equal(appointments.Count, model.Items.Count());
+            var model = Assert.IsAssignableFrom<AppointmentDetailsDto>(okResult.Value);
+            Assert.Equal(expected, model);
         }
 
         [Fact]
-        public void Get_WithValidId_ReturnsOkResult_WithAppointment()
+        public async Task Post_ReturnsOkResult_WhenModelStateIsValid()
         {
             // Arrange
-            int appointmentId = 1;
-            var appointment = new Appointment
-            {
-                AppointmentId = 2,
-                PatientId = 2,
-                EventId = 2,
-                DoctorId = 2,
-                Name = "Appointment 2",
-                Attended = false,
-                NotifyByEmail = false,
-                NotifyBySMS = false,
-                RemindBefore = 5
-            };
-
-            _appointmentRepositoryMock.Setup(x => x.Get(appointmentId)).Returns(appointment);
+            var controller = new AppointmentController(_appointmentRepository, _appointmentService, _mapper);
+            var appointment = new AppointmentBodyDto();
+            var expected = "Appointment created successfully";
+            _mapper.Map<Appointment>(appointment).Returns(new Appointment());
+            _appointmentRepository.AddAsync(Arg.Any<Appointment>()).Returns(expected);
 
             // Act
-            var result = _controller.Get(appointmentId);
+            var result = await controller.Post(appointment);
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
-            var model = Assert.IsType<Appointment>(okResult.Value);
-            Assert.Equal(appointment.AppointmentId, model.AppointmentId);
+            var model = Assert.IsAssignableFrom<string>(okResult.Value);
+            Assert.Equal(expected, model);
         }
-
-        [Fact]
-        public void Post_WithValidAppointment_ReturnsOkResult()
-        {
-            // Arrange
-            var appointment = new AppointmentModel
-            {
-                PatientId = 2,
-                EventId = 2,
-                DoctorId = 2,
-                Name = "Appointment 2",
-                Attended = false,
-                NotifyByEmail = false,
-                NotifyBySMS = false,
-                RemindBefore = 5
-            };
-            var appointmentDto = appointment.TransformToDto();
-
-            _appointmentRepositoryMock.Setup(x => x.Add(appointmentDto));
-
-            // Act
-            var result = _controller.Post(appointment);
-
-            // Assert
-            var okResult = Assert.IsType<OkObjectResult>(result);
-            Assert.Equal("Successfully created", okResult.Value);
-        }
-
     }
 }

@@ -1,9 +1,10 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace Application.Domain.Dao
 {
-    public class Doctor
+	public class Doctor
 	{
         [Key]
 		[DatabaseGenerated(DatabaseGeneratedOption.Identity)]
@@ -21,6 +22,7 @@ namespace Application.Domain.Dao
 		[Column(TypeName = "nvarchar(100)")]
 		public string Specialty { get; set; }
 
+		[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
 		public List<Appointment> Appointments { get; set; }
 	}
 }

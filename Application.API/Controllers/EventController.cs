@@ -1,6 +1,7 @@
 ﻿using Application.Domain.Dao;
 using Application.Domain.Dto;
 using Application.Domain.Interfaces;
+using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Application.API.Controllers
@@ -9,22 +10,24 @@ namespace Application.API.Controllers
     [ApiController]
     public class EventController : ControllerBase
     {
-        private readonly IDataRepository<Event> _eventRepository;
+        private readonly IEventRepository _eventRepository;
         private IEventService _eventService;
+        private IMapper _mapper;
 
-        public EventController(IDataRepository<Event> eventRepository, IEventService eventService)
+        public EventController(IEventRepository eventRepository, IEventService eventService, IMapper mapper)
         {
             _eventRepository = eventRepository;
             _eventService = eventService;
+            _mapper = mapper;
         }
 
         // GET: api/event
         [HttpGet]
-        public ActionResult<PaginationResponseModel<Event>> Get([FromQuery] FilterModel filter)
+        public async Task<ActionResult<PaginationResponseDto<EventDto>>> Get([FromQuery] FilterDto filter)
         {
             try
             {
-                var result = _eventService.GetEvents(filter);
+                var result = await _eventService.GetEventsAsync(filter);
                 return Ok(result);
             }
             catch (Exception e)
@@ -35,17 +38,18 @@ namespace Application.API.Controllers
 
         // GET api/event/5
         [HttpGet("{eventId}")]
-        public IActionResult Get(int eventId)
+        public async Task<IActionResult> Get(int eventId)
         {
             try
             {
-                Event eventObj = _eventRepository.Get(eventId);
+                Event eventObj = await _eventRepository.GetAsync(eventId);
 
                 if (eventObj == null)
                 {
                     return NotFound();
                 }
-                return Ok(eventObj);
+                var result = _mapper.Map<EventDto>(eventObj);
+                return Ok(result);
             }
             catch (Exception e)
             {
@@ -55,14 +59,15 @@ namespace Application.API.Controllers
 
         // POST api/event
         [HttpPost]
-        public IActionResult Post([FromBody] EventModel eventObj)
+        public async Task<IActionResult> Post([FromBody] EventBodyDto eventObj)
         {
             if (ModelState.IsValid)
             {
                 try
                 {
-                    _eventRepository.Add(eventObj.TransformToDto());
-                    return Ok("Successfully created");
+                    Event eventEntity = _mapper.Map<Event>(eventObj);
+                    string response = await _eventRepository.AddAsync(eventEntity);
+                    return Ok(response);
                 }
                 catch (Exception e)
                 {
@@ -78,19 +83,20 @@ namespace Application.API.Controllers
 
         // PUT api/event/5
         [HttpPut("{eventId}")]
-        public IActionResult Put(int eventId, [FromBody] EventModel eventObj)
+        public async Task<IActionResult> Put(int eventId, [FromBody] EventBodyDto eventObj)
         {
             if (ModelState.IsValid)
             {
-                Event eventToUpdate = _eventRepository.Get(eventId);
+                Event eventToUpdate = await _eventRepository.GetAsync(eventId);
 
                 if (eventToUpdate == null)
                 {
                     return BadRequest("Event doesnt exist");
 
                 }
-                _eventRepository.Update(eventToUpdate, eventObj.TransformToDto());
-                return Ok("Successfully updated");
+                Event eventEntity = _mapper.Map<Event>(eventObj);
+                string response = await _eventRepository.UpdateAsync(eventToUpdate, eventEntity);
+                return Ok(response);
             }
             else
             {
@@ -100,16 +106,16 @@ namespace Application.API.Controllers
 
         // DELETE api/event/5
         [HttpDelete("{eventId}")]
-        public IActionResult Delete(int eventId)
+        public async Task<IActionResult> Delete(int eventId)
         {
-            Event eventToDelete = _eventRepository.Get(eventId);
+            Event eventToDelete = await _eventRepository.GetAsync(eventId);
             if (eventToDelete == null)
             {
                 return BadRequest("Event doesnt exist");
 
             }
-            _eventRepository.Delete(eventToDelete);
-            return Ok("Successfully Deleted");
+            string response = await _eventRepository.DeleteAsync(eventToDelete);
+            return Ok(response);
         }
     }
 }
